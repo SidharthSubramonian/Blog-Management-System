@@ -1,12 +1,19 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BlogCard } from "@/components/blog/BlogCard";
-import { mockBlogs } from "@/lib/mock-data";
+import { useQuery } from "@tanstack/react-query";
+import { fetchBlogs } from "@/lib/api";
 
 export default function HomePage() {
-  const featuredBlog = mockBlogs.find(blog => blog.featured);
-  const recentBlogs = mockBlogs.slice(0, 3);
+  const { data: recentBlogs = [], isLoading: isLoadingRecent } = useQuery({
+    queryKey: ['blogs', 'recent'],
+    queryFn: () => fetchBlogs({ limit: 3 })
+  });
+
+  const { data: featuredBlog, isLoading: isLoadingFeatured } = useQuery({
+    queryKey: ['blogs', 'featured'],
+    queryFn: () => fetchBlogs({ featured: true, limit: 1 }).then(blogs => blogs[0])
+  });
 
   return (
     <div className="space-y-16 py-10">
@@ -50,13 +57,15 @@ export default function HomePage() {
                 <Link to={`/blogs/${featuredBlog.id}`}>Read Article</Link>
               </Button>
             </div>
-            <div className="rounded-xl overflow-hidden h-[300px]">
-              <img
-                src={featuredBlog.coverImage}
-                alt={featuredBlog.title}
-                className="h-full w-full object-cover"
-              />
-            </div>
+            {featuredBlog.cover_image && (
+              <div className="rounded-xl overflow-hidden h-[300px]">
+                <img
+                  src={featuredBlog.cover_image}
+                  alt={featuredBlog.title}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -70,9 +79,19 @@ export default function HomePage() {
           </Button>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {recentBlogs.map((blog) => (
-            <BlogCard key={blog.id} blog={blog} />
-          ))}
+          {isLoadingRecent ? (
+            Array(3).fill(0).map((_, i) => (
+              <div key={i} className="space-y-4 p-4">
+                <div className="h-48 bg-muted animate-pulse rounded-lg" />
+                <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+                <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
+              </div>
+            ))
+          ) : (
+            recentBlogs.map((blog) => (
+              <BlogCard key={blog.id} blog={blog} />
+            ))
+          )}
         </div>
       </section>
 

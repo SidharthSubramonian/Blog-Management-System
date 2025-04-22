@@ -10,26 +10,28 @@ interface BlogCardProps {
     id: string;
     title: string;
     excerpt: string;
-    coverImage?: string;
-    createdAt: Date;
+    cover_image?: string;
+    created_at: string;
     author: {
-      name: string;
-      image?: string;
+      username: string;
+      avatar_url?: string;
     };
     tags: string[];
-    commentCount: number;
-    viewCount: number;
+    comments: { count: number }[];
+    view_count: number;
   };
 }
 
 export function BlogCard({ blog }: BlogCardProps) {
+  const commentCount = blog.comments?.[0]?.count || 0;
+  
   return (
     <article className="blog-card group">
       <Link to={`/blogs/${blog.id}`} className="block">
-        {blog.coverImage && (
+        {blog.cover_image && (
           <div className="aspect-video w-full overflow-hidden">
             <img
-              src={blog.coverImage}
+              src={blog.cover_image}
               alt={blog.title}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
@@ -38,13 +40,13 @@ export function BlogCard({ blog }: BlogCardProps) {
         <div className="p-4 sm:p-6">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Avatar className="h-6 w-6">
-              <AvatarImage src={blog.author.image} alt={blog.author.name} />
-              <AvatarFallback>{blog.author.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={blog.author.avatar_url} alt={blog.author.username} />
+              <AvatarFallback>{blog.author.username.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <span>{blog.author.name}</span>
+            <span>{blog.author.username}</span>
             <span>•</span>
-            <time dateTime={blog.createdAt.toISOString()}>
-              {formatDistanceToNow(blog.createdAt, { addSuffix: true })}
+            <time dateTime={blog.created_at}>
+              {formatDistanceToNow(new Date(blog.created_at), { addSuffix: true })}
             </time>
           </div>
           <h3 className="mt-3 text-xl font-semibold leading-tight tracking-tight md:text-2xl">
@@ -63,11 +65,11 @@ export function BlogCard({ blog }: BlogCardProps) {
           <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Eye className="h-4 w-4" />
-              <span>{blog.viewCount}</span>
+              <span>{blog.view_count}</span>
             </div>
             <div className="flex items-center gap-1">
               <MessageSquare className="h-4 w-4" />
-              <span>{blog.commentCount}</span>
+              <span>{commentCount}</span>
             </div>
           </div>
         </div>

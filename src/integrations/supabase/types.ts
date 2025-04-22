@@ -9,152 +9,136 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      ads: {
-        Row: {
-          content: string
-          created_at: string | null
-          id: string
-          image_url: string | null
-          title: string
-          user_id: string | null
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          id?: string
-          image_url?: string | null
-          title: string
-          user_id?: string | null
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          id?: string
-          image_url?: string | null
-          title?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ads_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      blog_stats: {
+      blog_tags: {
         Row: {
           blog_id: string
-          comments_count: number | null
-          likes: number | null
-          views: number | null
+          tag_id: string
         }
         Insert: {
           blog_id: string
-          comments_count?: number | null
-          likes?: number | null
-          views?: number | null
+          tag_id: string
         }
         Update: {
           blog_id?: string
-          comments_count?: number | null
-          likes?: number | null
-          views?: number | null
+          tag_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "blog_stats_blog_id_fkey"
+            foreignKeyName: "blog_tags_blog_id_fkey"
             columns: ["blog_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "blogs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
             referencedColumns: ["id"]
           },
         ]
       }
       blogs: {
         Row: {
+          author_id: string
           content: string
-          created_at: string | null
+          cover_image: string | null
+          created_at: string
+          excerpt: string
+          featured: boolean | null
           id: string
-          is_moderated: boolean | null
-          originality_score: number | null
-          preview: string | null
+          is_original: boolean | null
+          is_pending: boolean | null
+          published_at: string | null
+          slug: string
           tags: string[] | null
           title: string
-          updated_at: string | null
-          user_id: string | null
+          updated_at: string
+          view_count: number | null
         }
         Insert: {
+          author_id: string
           content: string
-          created_at?: string | null
+          cover_image?: string | null
+          created_at?: string
+          excerpt: string
+          featured?: boolean | null
           id?: string
-          is_moderated?: boolean | null
-          originality_score?: number | null
-          preview?: string | null
+          is_original?: boolean | null
+          is_pending?: boolean | null
+          published_at?: string | null
+          slug: string
           tags?: string[] | null
           title: string
-          updated_at?: string | null
-          user_id?: string | null
+          updated_at?: string
+          view_count?: number | null
         }
         Update: {
+          author_id?: string
           content?: string
-          created_at?: string | null
+          cover_image?: string | null
+          created_at?: string
+          excerpt?: string
+          featured?: boolean | null
           id?: string
-          is_moderated?: boolean | null
-          originality_score?: number | null
-          preview?: string | null
+          is_original?: boolean | null
+          is_pending?: boolean | null
+          published_at?: string | null
+          slug?: string
           tags?: string[] | null
           title?: string
-          updated_at?: string | null
-          user_id?: string | null
+          updated_at?: string
+          view_count?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "blogs_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "blogs_author_id_fkey"
+            columns: ["author_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
       comments: {
         Row: {
-          blog_id: string | null
+          author_id: string
+          blog_id: string
           content: string
-          created_at: string | null
+          created_at: string
           id: string
-          user_id: string | null
+          updated_at: string
         }
         Insert: {
-          blog_id?: string | null
+          author_id: string
+          blog_id: string
           content: string
-          created_at?: string | null
+          created_at?: string
           id?: string
-          user_id?: string | null
+          updated_at?: string
         }
         Update: {
-          blog_id?: string | null
+          author_id?: string
+          blog_id?: string
           content?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
-          user_id?: string | null
+          updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "comments_blog_id_fkey"
             columns: ["blog_id"]
             isOneToOne: false
             referencedRelation: "blogs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "comments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -183,27 +167,24 @@ export type Database = {
         }
         Relationships: []
       }
-      users: {
+      tags: {
         Row: {
-          avatar_url: string | null
-          bio: string | null
-          created_at: string | null
+          created_at: string
           id: string
-          username: string
+          name: string
+          slug: string
         }
         Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string | null
-          id: string
-          username: string
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
         }
         Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
-          username?: string
+          name?: string
+          slug?: string
         }
         Relationships: []
       }

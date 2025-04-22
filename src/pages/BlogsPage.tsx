@@ -1,18 +1,27 @@
-
 import { useState } from "react";
 import { BlogCard } from "@/components/blog/BlogCard";
-import { mockBlogs, mockTags } from "@/lib/mock-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchBlogs, fetchTags } from "@/lib/api";
 
 export default function BlogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
-  // Filter blogs based on search query and selected tags
-  const filteredBlogs = mockBlogs.filter(blog => {
+  const { data: blogs = [], isLoading: isLoadingBlogs } = useQuery({
+    queryKey: ['blogs'],
+    queryFn: () => fetchBlogs({ limit: 100 })
+  });
+
+  const { data: tags = [], isLoading: isLoadingTags } = useQuery({
+    queryKey: ['tags'],
+    queryFn: fetchTags
+  });
+  
+  const filteredBlogs = blogs.filter(blog => {
     const matchesSearch = blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       blog.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
     
@@ -44,7 +53,6 @@ export default function BlogsPage() {
         </p>
       </div>
       
-      {/* Search and Filters */}
       <div className="space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -58,7 +66,7 @@ export default function BlogsPage() {
         
         <div className="flex flex-wrap gap-3 items-center">
           <span className="text-sm font-medium">Popular Tags:</span>
-          {mockTags.slice(0, 6).map(tag => (
+          {tags.slice(0, 6).map(tag => (
             <Badge 
               key={tag.id}
               variant={selectedTags.includes(tag.name) ? "default" : "outline"}
@@ -78,8 +86,17 @@ export default function BlogsPage() {
         </div>
       </div>
       
-      {/* Blogs Grid */}
-      {filteredBlogs.length > 0 ? (
+      {isLoadingBlogs ? (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array(6).fill(0).map((_, i) => (
+            <div key={i} className="space-y-4 p-4">
+              <div className="h-48 bg-muted animate-pulse rounded-lg" />
+              <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+              <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
+            </div>
+          ))}
+        </div>
+      ) : filteredBlogs.length > 0 ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredBlogs.map(blog => (
             <BlogCard key={blog.id} blog={blog} />

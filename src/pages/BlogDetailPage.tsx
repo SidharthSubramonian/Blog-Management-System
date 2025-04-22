@@ -1,35 +1,33 @@
-
-import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { formatDistanceToNow, format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CommentSection } from "@/components/blog/CommentSection";
-import { getBlogById, getCommentsForBlog } from "@/lib/mock-data";
-import { Blog } from "@/lib/types";
 import { Calendar, Edit, Eye, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { fetchBlogById, incrementBlogView } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function BlogDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const [blog, setBlog] = useState<Blog | null>(null);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { user } = useAuth();
   
+  const { data: blog, isLoading, error } = useQuery({
+    queryKey: ['blog', id],
+    queryFn: () => id ? fetchBlogById(id) : null,
+    enabled: !!id
+  });
+
   useEffect(() => {
-    // Simulate loading
-    setLoading(true);
-    setTimeout(() => {
-      if (id) {
-        const foundBlog = getBlogById(id);
-        if (foundBlog) {
-          setBlog(foundBlog);
-        }
-      }
-      setLoading(false);
-    }, 500);
-  }, [id]);
+    if (id && !isLoading && blog) {
+      incrementBlogView(id).catch(console.error);
+    }
+  }, [id, isLoading, blog]);
 
   const handleShare = () => {
     if (navigator.share) {
@@ -47,7 +45,7 @@ export default function BlogDetailPage() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container max-w-4xl py-10 space-y-8 animate-pulse">
         <div className="h-8 w-3/4 bg-muted rounded"></div>
@@ -62,7 +60,7 @@ export default function BlogDetailPage() {
     );
   }
 
-  if (!blog) {
+  if (error || !blog) {
     return (
       <div className="container max-w-4xl py-10 text-center">
         <h1 className="font-heading text-3xl font-bold mb-4">Blog not found</h1>
@@ -76,8 +74,6 @@ export default function BlogDetailPage() {
     );
   }
 
-  const comments = getCommentsForBlog(blog.id);
-
   return (
     <div className="container max-w-4xl py-10 space-y-8">
       {/* Blog Header */}
@@ -87,33 +83,33 @@ export default function BlogDetailPage() {
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={blog.author.image} alt={blog.author.name} />
-              <AvatarFallback>{blog.author.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={blog.author.avatar_url} alt={blog.author.username} />
+              <AvatarFallback>{blog.author.username.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <span>{blog.author.name}</span>
+            <span>{blog.author.username}</span>
           </div>
           
           <div className="flex items-center gap-1">
             <Calendar className="h-4 w-4" />
-            <time dateTime={blog.publishedAt?.toISOString() || blog.createdAt.toISOString()}>
-              {blog.publishedAt 
-                ? format(blog.publishedAt, 'MMMM d, yyyy') 
-                : format(blog.createdAt, 'MMMM d, yyyy')}
+            <time dateTime={blog.published_at || blog.created_at}>
+              {blog.published_at 
+                ? format(new Date(blog.published_at), 'MMMM d, yyyy')
+                : format(new Date(blog.created_at), 'MMMM d, yyyy')}
             </time>
           </div>
           
           <div className="flex items-center gap-1">
             <Eye className="h-4 w-4" />
-            <span>{blog.viewCount} views</span>
+            <span>{blog.view_count} views</span>
           </div>
         </div>
       </div>
       
       {/* Cover Image */}
-      {blog.coverImage && (
+      {blog.cover_image && (
         <div className="rounded-xl overflow-hidden">
           <img
-            src={blog.coverImage}
+            src={blog.cover_image}
             alt={blog.title}
             className="w-full h-auto object-cover max-h-[400px]"
           />
@@ -136,8 +132,7 @@ export default function BlogDetailPage() {
             Share
           </Button>
           
-          {/* These buttons should only be visible to the author */}
-          {blog.authorId === "1" && (
+          {user?.id === blog.author_id && (
             <>
               <Button variant="outline" size="sm" asChild>
                 <Link to={`/dashboard/blogs/edit/${blog.id}`}>
@@ -163,7 +158,7 @@ export default function BlogDetailPage() {
       <Separator />
       
       {/* Comments Section */}
-      <CommentSection blogId={blog.id} comments={comments} />
+      <CommentSection blogId={blog.id} comments={blog.comments} />
     </div>
   );
 }
