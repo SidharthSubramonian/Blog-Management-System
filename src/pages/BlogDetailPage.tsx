@@ -12,6 +12,17 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchBlogById, incrementBlogView } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
+interface DatabaseComment {
+  id: string;
+  content: string;
+  created_at: string;
+  author: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+  };
+}
+
 export default function BlogDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -74,9 +85,19 @@ export default function BlogDetailPage() {
     );
   }
 
+  const formattedComments = blog.comments.map(comment => ({
+    id: comment.id,
+    content: comment.content,
+    createdAt: new Date(comment.created_at),
+    author: {
+      id: comment.author.id,
+      name: comment.author.username,
+      image: comment.author.avatar_url
+    }
+  }));
+
   return (
     <div className="container max-w-4xl py-10 space-y-8">
-      {/* Blog Header */}
       <div className="space-y-4">
         <h1 className="font-heading text-3xl font-bold md:text-4xl">{blog.title}</h1>
         
@@ -105,7 +126,6 @@ export default function BlogDetailPage() {
         </div>
       </div>
       
-      {/* Cover Image */}
       {blog.cover_image && (
         <div className="rounded-xl overflow-hidden">
           <img
@@ -116,7 +136,6 @@ export default function BlogDetailPage() {
         </div>
       )}
       
-      {/* Blog Controls */}
       <div className="flex justify-between items-center">
         <div className="flex flex-wrap gap-2">
           {blog.tags.map(tag => (
@@ -149,7 +168,6 @@ export default function BlogDetailPage() {
         </div>
       </div>
       
-      {/* Blog Content */}
       <div 
         className="blog-content"
         dangerouslySetInnerHTML={{ __html: blog.content.replace(/\n/g, '<br />') }}
@@ -157,8 +175,7 @@ export default function BlogDetailPage() {
       
       <Separator />
       
-      {/* Comments Section */}
-      <CommentSection blogId={blog.id} comments={blog.comments} />
+      <CommentSection blogId={blog.id} comments={formattedComments} />
     </div>
   );
 }
