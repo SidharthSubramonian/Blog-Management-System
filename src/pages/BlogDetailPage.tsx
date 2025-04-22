@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { formatDistanceToNow, format } from "date-fns";
@@ -85,10 +86,11 @@ export default function BlogDetailPage() {
     );
   }
 
+  // Transform the database comments to match the CommentSection component's expected format
   const formattedComments = blog.comments.map(comment => ({
     id: comment.id,
     content: comment.content,
-    createdAt: new Date(comment.created_at),
+    createdAt: new Date(comment.created_at), // Transform string date to Date object
     author: {
       id: comment.author.id,
       name: comment.author.username,
@@ -138,7 +140,7 @@ export default function BlogDetailPage() {
       
       <div className="flex justify-between items-center">
         <div className="flex flex-wrap gap-2">
-          {blog.tags.map(tag => (
+          {blog.tags && blog.tags.map(tag => (
             <Badge key={tag} variant="secondary" className="bg-accent">
               {tag}
             </Badge>

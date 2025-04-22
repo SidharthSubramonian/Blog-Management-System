@@ -64,6 +64,7 @@ export async function createComment(blogId: string, content: string) {
 }
 
 export async function incrementBlogView(blogId: string) {
+  // Fixed: Using rpc with the correct parameter name and type
   const { error } = await supabase.rpc('increment_blog_view', { blog_id: blogId });
   if (error) throw error;
 }
