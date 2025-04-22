@@ -113,8 +113,33 @@ export default {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.3s ease-out'
-			}
+			},
+			typography: ({ theme }) => ({
+				purple: {
+					css: {
+						'--tw-prose-body': theme('colors.blog.dark'),
+						'--tw-prose-headings': theme('colors.blog.primary'),
+						'--tw-prose-lead': theme('colors.blog.secondary'),
+						'--tw-prose-links': theme('colors.blog.primary'),
+						'--tw-prose-bold': theme('colors.blog.dark'),
+						'--tw-prose-counters': theme('colors.blog.tertiary'),
+						'--tw-prose-bullets': theme('colors.blog.tertiary'),
+						'--tw-prose-hr': theme('colors.blog.light'),
+						'--tw-prose-quotes': theme('colors.blog.dark'),
+						'--tw-prose-quote-borders': theme('colors.blog.tertiary'),
+						'--tw-prose-captions': theme('colors.blog.muted'),
+						'--tw-prose-code': theme('colors.blog.dark'),
+						'--tw-prose-pre-code': theme('colors.blog.light'),
+						'--tw-prose-pre-bg': theme('colors.blog.dark'),
+						'--tw-prose-th-borders': theme('colors.blog.light'),
+						'--tw-prose-td-borders': theme('colors.blog.light'),
+					},
+				},
+			}),
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+		require("tailwindcss-animate"),
+		require("@tailwindcss/typography"),
+	],
 } satisfies Config;

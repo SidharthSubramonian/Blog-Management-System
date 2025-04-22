@@ -2,10 +2,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockBlogStats, mockBlogs } from "@/lib/mock-data";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { BarChart2, FileText, MessageSquare, Eye, Plus } from "lucide-react";
+import { BarChart2, FileText, MessageSquare, Eye, Plus, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { formatDistanceToNow } from "date-fns";
 
 // Mock data for the chart
 const viewsData = [
