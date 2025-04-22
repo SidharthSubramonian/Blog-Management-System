@@ -1,10 +1,9 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster as ToastToaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useEffect } from "react";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Layout components
 import { Layout } from "./components/layout/Layout";
@@ -30,44 +29,36 @@ import NewBlogPage from "./pages/blog/NewBlogPage";
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Set theme based on user preference or system preference
-  useEffect(() => {
-    const theme = localStorage.getItem("theme");
-    if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ToastToaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Public routes with main layout */}
-            <Route element={<Layout />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/blogs" element={<BlogsPage />} />
-              <Route path="/blogs/:id" element={<BlogDetailPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-            </Route>
-            
-            {/* Dashboard routes with dashboard layout */}
-            <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/dashboard/blogs" element={<MyBlogsPage />} />
-              <Route path="/new-blog" element={<NewBlogPage />} />
-            </Route>
-            
-            {/* Catch all route for 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <ToastToaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes with main layout */}
+              <Route element={<Layout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/blogs" element={<BlogsPage />} />
+                <Route path="/blogs/:id" element={<BlogDetailPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+              </Route>
+              
+              {/* Dashboard routes with dashboard layout */}
+              <Route element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/dashboard/blogs" element={<MyBlogsPage />} />
+                <Route path="/new-blog" element={<NewBlogPage />} />
+              </Route>
+              
+              {/* Catch all route for 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };
