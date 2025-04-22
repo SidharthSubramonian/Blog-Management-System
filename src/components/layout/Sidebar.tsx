@@ -1,5 +1,5 @@
 
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
@@ -10,6 +10,8 @@ import {
   LogOut, 
   Settings
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const sidebarItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -22,6 +24,18 @@ const sidebarItems = [
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success("Successfully logged out");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to log out");
+    }
+  };
   
   return (
     <aside className="fixed left-0 top-16 z-30 hidden h-[calc(100vh-4rem)] w-56 border-r bg-background/80 backdrop-blur-md lg:block">
@@ -43,13 +57,13 @@ export function Sidebar() {
         ))}
         
         <div className="mt-auto">
-          <Link
-            to="/logout"
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
           >
             <LogOut className="h-4 w-4" />
             Logout
-          </Link>
+          </button>
         </div>
       </nav>
     </aside>

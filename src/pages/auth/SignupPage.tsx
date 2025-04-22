@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -19,7 +20,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name || !email || !password || !confirmPassword) {
@@ -39,12 +40,28 @@ export default function SignupPage() {
     
     setIsLoading(true);
     
-    // Simulate registration
-    setTimeout(() => {
-      toast.success("Account created successfully!");
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+          }
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Account created successfully! Check your email for confirmation.");
       navigate("/dashboard");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create account");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

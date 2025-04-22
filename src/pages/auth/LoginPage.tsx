@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,7 +16,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
@@ -25,13 +26,23 @@ export default function LoginPage() {
     
     setIsLoading(true);
     
-    // Simulate authentication
-    setTimeout(() => {
-      // For demo purposes, any login works
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
       toast.success("Successfully logged in!");
       navigate("/dashboard");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to log in");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
