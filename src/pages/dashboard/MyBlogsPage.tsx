@@ -12,8 +12,8 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { mockBlogs } from "@/lib/mock-data";
-import { Blog } from "@/lib/types";
+import { useQuery } from "@tanstack/react-query";
+import { fetchBlogs } from "@/lib/api";
 import { 
   Edit, 
   Eye, 
@@ -29,19 +29,27 @@ import { toast } from "sonner";
 
 export default function MyBlogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [blogs, setBlogs] = useState<Blog[]>(mockBlogs);
-  
-  const filteredBlogs = blogs.filter(blog => 
-    blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    blog.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const { data: blogs = [], refetch } = useQuery({
+    queryKey: ['my-blogs'],
+    queryFn: () => fetchBlogs({ limit: 100 })
+  });
 
+  const [localBlogs, setLocalBlogs] = useState<string[]>([]);
+
+  // Local delete, doesn't remove from db (would require an API call)
   const handleDeleteBlog = (id: string) => {
     if (confirm("Are you sure you want to delete this blog?")) {
-      setBlogs(blogs.filter(blog => blog.id !== id));
-      toast.success("Blog deleted successfully!");
+      setLocalBlogs(prev => [...prev, id]);
+      toast.success("Blog deleted (refresh to fetch from DB)!");
     }
   };
+
+  const filteredBlogs = blogs
+    .filter(blog => !localBlogs.includes(blog.id))
+    .filter(blog => 
+      blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (blog.tags && blog.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+    );
 
   return (
     <div className="space-y-6">
@@ -88,12 +96,12 @@ export default function MyBlogsPage() {
                     </Link>
                   </TableCell>
                   <TableCell>
-                    {blog.publishedAt ? (
+                    {blog.published_at ? (
                       <Badge className="flex w-fit items-center gap-1 bg-green-500">
                         <CheckCircle className="h-3 w-3" />
                         Published
                       </Badge>
-                    ) : blog.isPending ? (
+                    ) : blog.is_pending ? (
                       <Badge variant="outline" className="flex w-fit items-center gap-1 text-amber-500 border-amber-500">
                         <Clock className="h-3 w-3" />
                         Pending
@@ -106,12 +114,12 @@ export default function MyBlogsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {blog.tags.slice(0, 2).map(tag => (
+                      {blog.tags && blog.tags.slice(0, 2).map(tag => (
                         <Badge key={tag} variant="secondary" className="text-xs">
                           {tag}
                         </Badge>
                       ))}
-                      {blog.tags.length > 2 && (
+                      {blog.tags && blog.tags.length > 2 && (
                         <Badge variant="outline" className="text-xs">
                           +{blog.tags.length - 2}
                         </Badge>
@@ -121,17 +129,17 @@ export default function MyBlogsPage() {
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">
                       <Eye className="h-3 w-3 text-muted-foreground" />
-                      {blog.viewCount}
+                      {blog.view_count ?? 0}
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">
                       <MessageSquare className="h-3 w-3 text-muted-foreground" />
-                      {blog.commentCount}
+                      {blog.comments?.[0]?.count ?? 0}
                     </div>
                   </TableCell>
                   <TableCell>
-                    {formatDistanceToNow(blog.createdAt, { addSuffix: true })}
+                    {formatDistanceToNow(new Date(blog.created_at), { addSuffix: true })}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

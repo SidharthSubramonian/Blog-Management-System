@@ -1,14 +1,16 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockBlogStats, mockBlogs } from "@/lib/mock-data";
+import { useQuery } from "@tanstack/react-query";
+import { fetchBlogs } from "@/lib/api";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { BarChart2, FileText, MessageSquare, Eye, Plus, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
+import React from "react";
 
-// Mock data for the chart
+// Mock data for the chart - placeholder since we don't track per day
 const viewsData = [
   { day: "Mon", views: 45 },
   { day: "Tue", views: 62 },
@@ -20,8 +22,30 @@ const viewsData = [
 ];
 
 export default function DashboardPage() {
-  const stats = mockBlogStats;
-  const recentBlogs = mockBlogs.slice(0, 5);
+  // Fetch all blogs (limit to 100 for safety)
+  const { data: blogs = [], isLoading } = useQuery({
+    queryKey: ['dashboard-blogs'],
+    queryFn: () => fetchBlogs({ limit: 100 })
+  });
+
+  // Aggregate stats from blogs
+  const stats = React.useMemo(() => {
+    const publishedBlogs = blogs.filter(blog => blog.published_at).length;
+    const draftBlogs = blogs.filter(blog => !blog.published_at && !blog.is_pending).length;
+    const pendingBlogs = blogs.filter(blog => blog.is_pending).length;
+    const totalViews = blogs.reduce((sum, b) => sum + (b.view_count || 0), 0);
+    const totalComments = blogs.reduce((sum, b) => sum + ((b.comments && b.comments[0]?.count) || 0), 0);
+    return {
+      totalBlogs: blogs.length,
+      totalViews,
+      totalComments,
+      publishedBlogs,
+      draftBlogs,
+      pendingBlogs,
+    };
+  }, [blogs]);
+
+  const recentBlogs = blogs.slice(0, 5);
 
   return (
     <div className="space-y-8">
@@ -49,7 +73,6 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Views</CardTitle>
@@ -62,7 +85,6 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Comments</CardTitle>
@@ -75,7 +97,6 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
@@ -83,7 +104,10 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Math.round((stats.totalComments / stats.totalViews) * 100 * 10) / 10}%
+              {stats.totalViews > 0
+                ? Math.round((stats.totalComments / stats.totalViews) * 100 * 10) / 10
+                : 0
+              }%
             </div>
             <p className="text-xs text-muted-foreground">
               Comments per 100 views
@@ -125,53 +149,67 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {recentBlogs.map((blog) => (
-              <div key={blog.id} className="flex items-start justify-between border-b pb-4 last:border-0 last:pb-0">
-                <div className="space-y-1">
-                  <Link
-                    to={`/blogs/${blog.id}`}
-                    className="font-medium hover:underline"
-                  >
-                    {blog.title}
-                  </Link>
-                  <div className="flex flex-wrap gap-2">
-                    {blog.tags.slice(0, 2).map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {blog.tags.length > 2 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{blog.tags.length - 2} more
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      <span>{blog.viewCount}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MessageSquare className="h-3 w-3" />
-                      <span>{blog.commentCount}</span>
-                    </div>
-                    <span>
-                      {formatDistanceToNow(blog.publishedAt || blog.createdAt, {
-                        addSuffix: true,
-                      })}
-                    </span>
-                  </div>
+            {isLoading ? (
+              Array(3).fill(0).map((_, i) => (
+                <div key={i} className="space-y-2 animate-pulse">
+                  <div className="h-4 bg-muted rounded w-2/3" />
+                  <div className="h-3 bg-muted rounded w-1/2" />
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link to={`/dashboard/blogs/edit/${blog.id}`}>
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
+              ))
+            ) : recentBlogs.length > 0 ? (
+              recentBlogs.map((blog) => (
+                <div key={blog.id} className="flex items-start justify-between border-b pb-4 last:border-0 last:pb-0">
+                  <div className="space-y-1">
+                    <Link
+                      to={`/blogs/${blog.id}`}
+                      className="font-medium hover:underline"
+                    >
+                      {blog.title}
                     </Link>
-                  </Button>
+                    <div className="flex flex-wrap gap-2">
+                      {blog.tags && blog.tags.slice(0, 2).map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                      {blog.tags && blog.tags.length > 2 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{blog.tags.length - 2} more
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        <span>{blog.view_count || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3" />
+                        <span>{blog.comments?.[0]?.count ?? 0}</span>
+                      </div>
+                      <span>
+                        {formatDistanceToNow(
+                          blog.published_at
+                            ? new Date(blog.published_at)
+                            : new Date(blog.created_at),
+                          { addSuffix: true }
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/dashboard/blogs/edit/${blog.id}`}>
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">Edit</span>
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div>No recent blogs found.</div>
+            )}
           </div>
         </CardContent>
       </Card>
