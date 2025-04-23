@@ -52,19 +52,45 @@ export async function fetchTags() {
 }
 
 export async function createComment(blogId: string, content: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('User must be logged in to comment');
+
   const { error } = await supabase
     .from('comments')
     .insert({
       blog_id: blogId,
       content,
-      author_id: (await supabase.auth.getUser()).data.user?.id
+      author_id: user.id
+    });
+
+  if (error) throw error;
+}
+
+export async function createBlog(blogData: {
+  title: string;
+  content: string;
+  excerpt: string;
+  cover_image?: string;
+  tags: string[];
+}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('User must be logged in to create a blog');
+
+  const { error } = await supabase
+    .from('blogs')
+    .insert({
+      ...blogData,
+      author_id: user.id,
+      is_pending: false,
+      published_at: new Date().toISOString()
     });
 
   if (error) throw error;
 }
 
 export async function incrementBlogView(blogId: string) {
-  // Fixed: Using rpc with the correct parameter name and type
   const { error } = await supabase.rpc('increment_blog_view', { blog_id: blogId });
   if (error) throw error;
 }
