@@ -10,7 +10,7 @@ import { CommentSection } from "@/components/blog/CommentSection";
 import { Calendar, Edit, Eye, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-import { fetchBlogById, incrementBlogView } from "@/lib/api";
+import { fetchBlogById } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface DatabaseComment {
@@ -36,9 +36,7 @@ export default function BlogDetailPage() {
   });
 
   useEffect(() => {
-    if (id && !isLoading && blog) {
-      incrementBlogView(id).catch(console.error);
-    }
+    // We're no longer calling incrementBlogView here since it's now done inside fetchBlogById
   }, [id, isLoading, blog]);
 
   const handleShare = () => {
@@ -86,15 +84,20 @@ export default function BlogDetailPage() {
     );
   }
 
+  // Ensure blog.author is not null before accessing its properties
+  const authorName = blog.author?.username || "Anonymous";
+  const authorInitials = authorName.substring(0, 2).toUpperCase();
+  const avatarUrl = blog.author?.avatar_url || null;
+
   // Transform the database comments to match the CommentSection component's expected format
   const formattedComments = blog.comments.map(comment => ({
     id: comment.id,
     content: comment.content,
     createdAt: new Date(comment.created_at), // Transform string date to Date object
     author: {
-      id: comment.author.id,
-      name: comment.author.username,
-      image: comment.author.avatar_url
+      id: comment.author?.id || "anonymous",
+      name: comment.author?.username || "Anonymous",
+      image: comment.author?.avatar_url || null
     }
   }));
 
@@ -106,10 +109,10 @@ export default function BlogDetailPage() {
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={blog.author.avatar_url} alt={blog.author.username} />
-              <AvatarFallback>{blog.author.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={avatarUrl} alt={authorName} />
+              <AvatarFallback>{authorInitials}</AvatarFallback>
             </Avatar>
-            <span>{blog.author.username}</span>
+            <span>{authorName}</span>
           </div>
           
           <div className="flex items-center gap-1">

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export async function fetchBlogs({ featured = false, limit = 10 } = {}) {
@@ -20,17 +19,15 @@ export async function fetchBlogs({ featured = false, limit = 10 } = {}) {
   
   if (error) throw error;
   
-  // Ensure blog entries have author data, even if null
   const processedData = data?.map(blog => ({
     ...blog,
-    author: blog.author?.[0] || null // Get first item from profiles array or null if empty
+    author: blog.author?.[0] || null
   }));
   
   return processedData || [];
 }
 
 export async function fetchBlogById(id: string) {
-  // Get the blog post
   const { data, error } = await supabase
     .from('blogs')
     .select(`
@@ -48,7 +45,6 @@ export async function fetchBlogById(id: string) {
 
   if (error) throw error;
   
-  // Process data to ensure author is properly formatted
   const processedData = {
     ...data,
     author: data.author?.[0] || null,
@@ -58,8 +54,22 @@ export async function fetchBlogById(id: string) {
     })) || []
   };
   
-  // Increment view count
-  await incrementBlogView(id);
+  try {
+    const { data: blogData } = await supabase
+      .from('blogs')
+      .select('view_count')
+      .eq('id', id)
+      .single();
+    
+    const viewCount = (blogData?.view_count || 0) + 1;
+    
+    await supabase
+      .from('blogs')
+      .update({ view_count: viewCount })
+      .eq('id', id);
+  } catch (e) {
+    console.error("Failed to increment view count:", e);
+  }
   
   return processedData;
 }
@@ -81,7 +91,6 @@ export async function fetchMyBlogs() {
     
   if (error) throw error;
   
-  // Process data to ensure author is properly formatted
   const processedData = data?.map(blog => ({
     ...blog,
     author: blog.author?.[0] || null
@@ -126,7 +135,6 @@ export async function createBlog(blogData: {
   
   if (!user) throw new Error('User must be logged in to create a blog');
 
-  // Generate a slug from the title
   const slug = blogData.title
     .toLowerCase()
     .replace(/[^\w\s]/gi, '')
@@ -147,13 +155,30 @@ export async function createBlog(blogData: {
 }
 
 export async function incrementBlogView(blogId: string) {
-  // Fix the type error by explicitly specifying the parameter type
-  const { error } = await supabase.rpc('increment_blog_view', { 
-    blog_id: blogId 
-  } as { blog_id: string });
-  
-  if (error) {
-    console.error("Failed to increment view count:", error);
+  try {
+    const { data: blogData, error } = await supabase
+      .from('blogs')
+      .select('view_count')
+      .eq('id', blogId)
+      .single();
+    
+    if (error) {
+      console.error("Failed to get blog view count:", error);
+      return;
+    }
+    
+    const viewCount = (blogData?.view_count || 0) + 1;
+    
+    const { error: updateError } = await supabase
+      .from('blogs')
+      .update({ view_count: viewCount })
+      .eq('id', blogId);
+      
+    if (updateError) {
+      console.error("Failed to update view count:", updateError);
+    }
+  } catch (e) {
+    console.error("Error in incrementBlogView:", e);
   }
 }
 
@@ -162,7 +187,6 @@ export async function fetchBlogViewStats(days = 7) {
   
   if (!user) throw new Error("User must be logged in to fetch view stats");
   
-  // Get user's blogs
   const { data: blogs, error: blogError } = await supabase
     .from('blogs')
     .select('id, view_count, created_at')
@@ -170,7 +194,6 @@ export async function fetchBlogViewStats(days = 7) {
     
   if (blogError) throw blogError;
   
-  // Generate daily view stats based on blog creation and view counts
   const today = new Date();
   const stats = [];
   
@@ -179,11 +202,9 @@ export async function fetchBlogViewStats(days = 7) {
     date.setDate(date.getDate() - i);
     const dayStr = date.toLocaleDateString('en-US', { weekday: 'short' });
     
-    // Calculate views for blogs that existed on this date
     const viewsOnDay = blogs.reduce((sum, blog) => {
       const blogDate = new Date(blog.created_at);
       if (blogDate <= date) {
-        // Distribute views across days since creation
         const daysSinceCreation = Math.max(1, Math.floor((today.getTime() - blogDate.getTime()) / (1000 * 60 * 60 * 24)));
         return sum + (blog.view_count || 0) / daysSinceCreation;
       }
