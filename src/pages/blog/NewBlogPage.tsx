@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { TagSelector } from "@/components/blog/TagSelector";
 import { toast } from "sonner";
 import { ArrowLeft, Image, Loader2, Save } from "lucide-react";
+import { createBlog } from "@/lib/api";
+import { useMutation } from "@tanstack/react-query";
 
 export default function NewBlogPage() {
   const [title, setTitle] = useState("");
@@ -19,6 +21,19 @@ export default function NewBlogPage() {
   const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
 
+  // Create a mutation for the blog creation
+  const createBlogMutation = useMutation({
+    mutationFn: createBlog,
+    onSuccess: () => {
+      toast.success("Blog published successfully!");
+      navigate("/dashboard/blogs");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to publish blog: ${error.message}`);
+      setIsPublishing(false);
+    }
+  });
+
   const handleSaveDraft = () => {
     if (!title) {
       toast.error("Please enter a title for your blog post");
@@ -27,15 +42,15 @@ export default function NewBlogPage() {
     
     setIsSaving(true);
     
-    // Simulate saving
+    // Simulate saving a draft
+    // In a real app, you would call an API to save draft
     setTimeout(() => {
       toast.success("Draft saved successfully!");
       setIsSaving(false);
-      navigate("/dashboard/blogs");
     }, 1000);
   };
 
-  const handlePublish = (e: React.FormEvent) => {
+  const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title) {
@@ -60,12 +75,18 @@ export default function NewBlogPage() {
     
     setIsPublishing(true);
     
-    // Simulate publishing
-    setTimeout(() => {
-      toast.success("Blog published successfully!");
-      setIsPublishing(false);
-      navigate("/dashboard/blogs");
-    }, 1500);
+    try {
+      await createBlogMutation.mutateAsync({
+        title,
+        content,
+        excerpt,
+        cover_image: coverImage,
+        tags: selectedTags
+      });
+    } catch (error) {
+      // Error is handled by the mutation
+      console.error("Error publishing blog:", error);
+    }
   };
 
   return (
@@ -98,9 +119,16 @@ export default function NewBlogPage() {
           <Button 
             type="submit"
             onClick={handlePublish}
-            disabled={isPublishing || isSaving}
+            disabled={isPublishing || isSaving || createBlogMutation.isPending}
           >
-            {isPublishing ? "Publishing..." : "Publish"}
+            {createBlogMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Publishing...
+              </>
+            ) : (
+              "Publish"
+            )}
           </Button>
         </div>
       </div>

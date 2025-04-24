@@ -84,7 +84,7 @@ export async function createBlog(blogData: {
     .replace(/[^\w\s]/gi, '')
     .replace(/\s+/g, '-');
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('blogs')
     .insert({
       ...blogData,
@@ -95,12 +95,13 @@ export async function createBlog(blogData: {
     });
 
   if (error) throw error;
+  return data;
 }
 
 export async function incrementBlogView(blogId: string) {
   // Fix the type error by using the correct parameter type
   const { error } = await supabase.rpc('increment_blog_view', { 
-    blog_id: blogId as unknown as any // Type assertion to resolve the type error
+    blog_id: blogId 
   });
   if (error) throw error;
 }

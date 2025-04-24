@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster as ToastToaster } from "@/components/ui/toaster";
@@ -22,6 +23,10 @@ import SignupPage from "./pages/auth/SignupPage";
 // Dashboard pages
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import MyBlogsPage from "./pages/dashboard/MyBlogsPage";
+import CommentsPage from "./pages/dashboard/CommentsPage";
+import TagsPage from "./pages/dashboard/TagsPage";
+import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
+import SettingsPage from "./pages/dashboard/SettingsPage";
 
 // Blog management pages
 import NewBlogPage from "./pages/blog/NewBlogPage";
@@ -50,6 +55,10 @@ const App = () => {
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/blogs" element={<MyBlogsPage />} />
+                <Route path="/dashboard/comments" element={<CommentsPage />} />
+                <Route path="/dashboard/tags" element={<TagsPage />} />
+                <Route path="/dashboard/analytics" element={<AnalyticsPage />} />
+                <Route path="/dashboard/settings" element={<SettingsPage />} />
                 <Route path="/new-blog" element={<NewBlogPage />} />
               </Route>
               
