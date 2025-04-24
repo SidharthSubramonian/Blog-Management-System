@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { fetchBlogs } from "@/lib/api";
+import { fetchBlogs, fetchBlogViewStats, fetchMyBlogs } from "@/lib/api";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { BarChart2, FileText, MessageSquare, Eye, Plus, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,23 +9,23 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import React from "react";
-
-// Mock data for the chart - placeholder since we don't track per day
-const viewsData = [
-  { day: "Mon", views: 45 },
-  { day: "Tue", views: 62 },
-  { day: "Wed", views: 58 },
-  { day: "Thu", views: 71 },
-  { day: "Fri", views: 83 },
-  { day: "Sat", views: 99 },
-  { day: "Sun", views: 87 },
-];
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function DashboardPage() {
-  // Fetch all blogs (limit to 100 for safety)
+  const { user } = useAuth();
+  
+  // Fetch user's blogs
   const { data: blogs = [], isLoading } = useQuery({
     queryKey: ['dashboard-blogs'],
-    queryFn: () => fetchBlogs({ limit: 100 })
+    queryFn: () => fetchMyBlogs(),
+    enabled: !!user
+  });
+  
+  // Fetch view statistics
+  const { data: viewsData = [] } = useQuery({
+    queryKey: ['blog-view-stats'],
+    queryFn: () => fetchBlogViewStats(7),
+    enabled: !!user
   });
 
   // Aggregate stats from blogs
@@ -81,7 +81,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalViews}</div>
             <p className="text-xs text-muted-foreground">
-              +{viewsData[6].views} views this week
+              +{viewsData.length > 0 ? viewsData[viewsData.length - 1].views : 0} views recently
             </p>
           </CardContent>
         </Card>

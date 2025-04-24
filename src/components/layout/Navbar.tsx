@@ -4,8 +4,19 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { LogIn, Menu, X, Plus } from "lucide-react";
+import { LogIn, Menu, X, Plus, UserRound, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface NavbarProps {
   user?: {
@@ -18,6 +29,18 @@ interface NavbarProps {
 
 export function Navbar({ user }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success("Successfully logged out");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to log out");
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
@@ -55,10 +78,28 @@ export function Navbar({ user }: NavbarProps) {
                   New Blog
                 </Link>
               </Button>
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user.image || ""} alt={user.name} />
-                <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Avatar className="h-8 w-8 cursor-pointer">
+                    <AvatarImage src={user.image || ""} alt={user.name} />
+                    <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard">
+                      <UserRound className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ) : (
             <Button asChild size="sm">
@@ -128,6 +169,10 @@ export function Navbar({ user }: NavbarProps) {
                 </Avatar>
                 <span>{user.name}</span>
               </div>
+              <Button variant="ghost" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
             </>
           ) : (
             <Button asChild>

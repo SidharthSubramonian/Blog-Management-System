@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { fetchBlogs } from "@/lib/api";
+import { fetchMyBlogs } from "@/lib/api";
 import { 
   Edit, 
   Eye, 
@@ -26,12 +26,16 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function MyBlogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { user } = useAuth();
+  
   const { data: blogs = [], refetch } = useQuery({
     queryKey: ['my-blogs'],
-    queryFn: () => fetchBlogs({ limit: 100 })
+    queryFn: () => fetchMyBlogs(),
+    enabled: !!user
   });
 
   const [localBlogs, setLocalBlogs] = useState<string[]>([]);

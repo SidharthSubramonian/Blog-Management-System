@@ -24,6 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        // Update both session and user in a single update
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setLoading(false);
