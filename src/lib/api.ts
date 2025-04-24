@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export async function fetchBlogs({ featured = false, limit = 10 } = {}) {
@@ -146,10 +147,10 @@ export async function createBlog(blogData: {
 }
 
 export async function incrementBlogView(blogId: string) {
-  // Fix the type error by using the correct parameter type
+  // Fix the type error by explicitly specifying the parameter type
   const { error } = await supabase.rpc('increment_blog_view', { 
     blog_id: blogId 
-  });
+  } as { blog_id: string });
   
   if (error) {
     console.error("Failed to increment view count:", error);
