@@ -12,10 +12,10 @@ interface BlogCardProps {
     excerpt: string;
     cover_image?: string;
     created_at: string;
-    author: {
-      username: string;
+    author?: {
+      username?: string;
       avatar_url?: string;
-    };
+    } | null;
     tags: string[];
     comments: { count: number }[];
     view_count: number;
@@ -24,6 +24,10 @@ interface BlogCardProps {
 
 export function BlogCard({ blog }: BlogCardProps) {
   const commentCount = blog.comments?.[0]?.count || 0;
+  
+  // Default values for author if it's missing
+  const authorName = blog.author?.username || "Anonymous";
+  const authorInitials = authorName.substring(0, 2).toUpperCase();
   
   return (
     <article className="blog-card group">
@@ -40,10 +44,10 @@ export function BlogCard({ blog }: BlogCardProps) {
         <div className="p-4 sm:p-6">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Avatar className="h-6 w-6">
-              <AvatarImage src={blog.author.avatar_url} alt={blog.author.username} />
-              <AvatarFallback>{blog.author.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={blog.author?.avatar_url} alt={authorName} />
+              <AvatarFallback>{authorInitials}</AvatarFallback>
             </Avatar>
-            <span>{blog.author.username}</span>
+            <span>{authorName}</span>
             <span>•</span>
             <time dateTime={blog.created_at}>
               {formatDistanceToNow(new Date(blog.created_at), { addSuffix: true })}
@@ -56,7 +60,7 @@ export function BlogCard({ blog }: BlogCardProps) {
             {blog.excerpt}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {blog.tags.map((tag) => (
+            {blog.tags && blog.tags.map((tag) => (
               <Badge key={tag} variant="secondary" className="bg-accent">
                 {tag}
               </Badge>

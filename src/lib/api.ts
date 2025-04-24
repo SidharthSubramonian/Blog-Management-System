@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export async function fetchBlogs({ featured = false, limit = 10 } = {}) {
@@ -19,7 +18,14 @@ export async function fetchBlogs({ featured = false, limit = 10 } = {}) {
   const { data, error } = await query.limit(limit);
   
   if (error) throw error;
-  return data;
+  
+  // Ensure blog entries have author data, even if null
+  const processedData = data?.map(blog => ({
+    ...blog,
+    author: blog.author?.[0] || null // Get first item from profiles array or null if empty
+  }));
+  
+  return processedData || [];
 }
 
 export async function fetchBlogById(id: string) {
@@ -41,10 +47,20 @@ export async function fetchBlogById(id: string) {
 
   if (error) throw error;
   
+  // Process data to ensure author is properly formatted
+  const processedData = {
+    ...data,
+    author: data.author?.[0] || null,
+    comments: data.comments?.map(comment => ({
+      ...comment,
+      author: comment.author?.[0] || null
+    })) || []
+  };
+  
   // Increment view count
   await incrementBlogView(id);
   
-  return data;
+  return processedData;
 }
 
 export async function fetchMyBlogs() {
@@ -63,7 +79,14 @@ export async function fetchMyBlogs() {
     .order('created_at', { ascending: false });
     
   if (error) throw error;
-  return data;
+  
+  // Process data to ensure author is properly formatted
+  const processedData = data?.map(blog => ({
+    ...blog,
+    author: blog.author?.[0] || null
+  }));
+  
+  return processedData || [];
 }
 
 export async function fetchTags() {

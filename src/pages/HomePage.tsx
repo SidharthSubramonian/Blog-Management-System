@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BlogCard } from "@/components/blog/BlogCard";
@@ -10,10 +11,13 @@ export default function HomePage() {
     queryFn: () => fetchBlogs({ limit: 3 })
   });
 
-  const { data: featuredBlog, isLoading: isLoadingFeatured } = useQuery({
+  const { data: featuredBlogs = [], isLoading: isLoadingFeatured } = useQuery({
     queryKey: ['blogs', 'featured'],
-    queryFn: () => fetchBlogs({ featured: true, limit: 1 }).then(blogs => blogs[0])
+    queryFn: () => fetchBlogs({ featured: true, limit: 1 })
   });
+  
+  // Get the first featured blog if available
+  const featuredBlog = featuredBlogs[0];
 
   return (
     <div className="space-y-16 py-10">
