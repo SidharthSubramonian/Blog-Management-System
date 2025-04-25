@@ -20,9 +20,13 @@ export function Layout() {
     }
   }, []);
 
-  // Redirect to login if not authenticated
+  // Only redirect to login if needed (not for public pages)
   useEffect(() => {
-    if (!loading && !user && window.location.pathname !== "/login" && window.location.pathname !== "/signup") {
+    const publicPaths = ['/', '/blogs', '/login', '/signup'];
+    const isPublicPath = publicPaths.some(path => 
+      window.location.pathname === path || window.location.pathname.startsWith('/blogs/'));
+    
+    if (!loading && !user && !isPublicPath) {
       navigate("/login");
     }
   }, [user, loading, navigate]);

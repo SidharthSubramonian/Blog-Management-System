@@ -9,25 +9,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CommentSection } from "@/components/blog/CommentSection";
 import { Calendar, Edit, Eye, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
-import { fetchBlogById } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchBlogById, incrementBlogView } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-
-interface DatabaseComment {
-  id: string;
-  content: string;
-  created_at: string;
-  author: {
-    id: string;
-    username: string;
-    avatar_url: string | null;
-  };
-}
+import { supabase } from "@/integrations/supabase/client";
 
 export default function BlogDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   
   const { data: blog, isLoading, error } = useQuery({
     queryKey: ['blog', id],
@@ -35,8 +26,29 @@ export default function BlogDetailPage() {
     enabled: !!id
   });
 
+  const deleteBlogMutation = useMutation({
+    mutationFn: async (blogId: string) => {
+      const { error } = await supabase
+        .from('blogs')
+        .delete()
+        .eq('id', blogId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Blog deleted successfully");
+      navigate("/dashboard/blogs");
+    },
+    onError: (error) => {
+      console.error("Error deleting blog:", error);
+      toast.error("Failed to delete blog");
+    }
+  });
+
   useEffect(() => {
-    // We're no longer calling incrementBlogView here since it's now done inside fetchBlogById
+    if (id && !isLoading && blog) {
+      incrementBlogView(id);
+    }
   }, [id, isLoading, blog]);
 
   const handleShare = () => {
@@ -52,6 +64,14 @@ export default function BlogDetailPage() {
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast.success("Link copied to clipboard!");
+    }
+  };
+
+  const handleDeleteBlog = () => {
+    if (window.confirm("Are you sure you want to delete this blog post? This action cannot be undone.")) {
+      if (id) {
+        deleteBlogMutation.mutate(id);
+      }
     }
   };
 
@@ -85,15 +105,16 @@ export default function BlogDetailPage() {
   }
 
   // Ensure blog.author is not null before accessing its properties
-  const authorName = blog.author?.username || "Anonymous";
+  const author = blog.author || { username: "Anonymous" };
+  const authorName = author.username || "Anonymous";
   const authorInitials = authorName.substring(0, 2).toUpperCase();
-  const avatarUrl = blog.author?.avatar_url || null;
+  const avatarUrl = author.avatar_url || null;
 
   // Transform the database comments to match the CommentSection component's expected format
   const formattedComments = blog.comments.map(comment => ({
     id: comment.id,
     content: comment.content,
-    createdAt: new Date(comment.created_at), // Transform string date to Date object
+    createdAt: new Date(comment.created_at),
     author: {
       id: comment.author?.id || "anonymous",
       name: comment.author?.username || "Anonymous",
@@ -164,7 +185,12 @@ export default function BlogDetailPage() {
                   Edit
                 </Link>
               </Button>
-              <Button variant="destructive" size="sm">
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={handleDeleteBlog}
+                disabled={deleteBlogMutation.isPending}
+              >
                 <Trash2 className="h-4 w-4 mr-1" />
                 Delete
               </Button>

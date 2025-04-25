@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export async function fetchBlogs({ featured = false, limit = 10 } = {}) {
@@ -218,4 +219,63 @@ export async function fetchBlogViewStats(days = 7) {
   }
   
   return stats;
+}
+
+export async function updateProfile(profileData: {
+  username?: string;
+  bio?: string;
+  avatar_url?: string;
+}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('User must be logged in to update profile');
+
+  const { error } = await supabase
+    .from('profiles')
+    .update(profileData)
+    .eq('id', user.id);
+
+  if (error) throw error;
+}
+
+export async function fetchUserProfile() {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('User must be logged in to fetch profile');
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteComment(commentId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('User must be logged in to delete comment');
+
+  const { error } = await supabase
+    .from('comments')
+    .delete()
+    .eq('id', commentId);
+
+  if (error) throw error;
+}
+
+export async function deleteBlog(blogId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('User must be logged in to delete blog');
+
+  const { error } = await supabase
+    .from('blogs')
+    .delete()
+    .eq('id', blogId)
+    .eq('author_id', user.id);
+
+  if (error) throw error;
 }

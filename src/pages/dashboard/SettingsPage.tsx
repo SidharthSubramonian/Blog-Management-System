@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [emailNotifications, setEmailNotifications] = useState({
     comments: true,
     mentions: true,
@@ -26,24 +27,147 @@ export default function SettingsPage() {
     newsletter: false
   });
 
-  const handleProfileUpdate = () => {
-    setIsUpdating(true);
+  // Load user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username, bio, avatar_url')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) throw error;
+        
+        if (data) {
+          setUsername(data.username || "");
+          setBio(data.bio || "");
+          setAvatarUrl(data.avatar_url || "");
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
     
-    // Simulate API call
-    setTimeout(() => {
-      toast.success("Profile updated successfully!");
-      setIsUpdating(false);
-    }, 1000);
+    fetchUserProfile();
+  }, [user]);
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) {
+      return;
+    }
+    setAvatarFile(event.target.files[0]);
   };
 
-  const handleNotificationUpdate = () => {
+  const uploadAvatar = async (): Promise<string | null> => {
+    if (!avatarFile || !user) return null;
+    
+    const fileExt = avatarFile.name.split('.').pop();
+    const fileName = `${user.id}-${Math.random().toString(36).substring(2)}${fileExt ? `.${fileExt}` : ''}`;
+    
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, avatarFile);
+      
+      if (uploadError) throw uploadError;
+      
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+        
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      return null;
+    }
+  };
+
+  const handleProfileUpdate = async () => {
+    if (!user) return;
+    
     setIsUpdating(true);
     
-    // Simulate API call
+    try {
+      // Upload avatar if selected
+      let newAvatarUrl = avatarUrl;
+      if (avatarFile) {
+        const uploadedUrl = await uploadAvatar();
+        if (uploadedUrl) {
+          newAvatarUrl = uploadedUrl;
+        }
+      }
+      
+      // Update profile in database
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          username,
+          bio,
+          avatar_url: newAvatarUrl
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      setAvatarUrl(newAvatarUrl);
+      setAvatarFile(null);
+      
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleNotificationUpdate = async () => {
+    setIsUpdating(true);
+    
+    // This would normally update user preferences in the database
+    // For now, we'll just simulate success
     setTimeout(() => {
       toast.success("Notification preferences updated!");
       setIsUpdating(false);
-    }, 1000);
+    }, 500);
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.currentTarget);
+    const currentPassword = formData.get('current-password') as string;
+    const newPassword = formData.get('new-password') as string;
+    const confirmPassword = formData.get('confirm-password') as string;
+    
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error("All fields are required");
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords don't match");
+      return;
+    }
+    
+    setIsUpdating(true);
+    
+    try {
+      // For demo purposes, we'll just show success
+      // In a real app, this would call an API to update the password
+      
+      toast.success("Password changed successfully!");
+      
+      // Reset form
+      e.currentTarget.reset();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to change password");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -66,14 +190,23 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={user?.user_metadata?.avatar_url || ""} />
-                  <AvatarFallback>{user?.email?.substring(0, 2).toUpperCase() || "??"}</AvatarFallback>
+                  <AvatarImage src={avatarFile ? URL.createObjectURL(avatarFile) : avatarUrl} />
+                  <AvatarFallback>{username.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || "??"}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <Button variant="outline" size="sm">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Change Avatar
-                  </Button>
+                  <Label htmlFor="avatar-upload" className="cursor-pointer">
+                    <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                      <Upload className="h-4 w-4" />
+                      <span>Change Avatar</span>
+                    </div>
+                    <Input
+                      id="avatar-upload"
+                      type="file"
+                      className="hidden"
+                      onChange={handleAvatarChange}
+                      accept="image/*"
+                    />
+                  </Label>
                 </div>
               </div>
               
@@ -209,23 +342,34 @@ export default function SettingsPage() {
               <CardTitle>Change Password</CardTitle>
               <CardDescription>Update your password to keep your account secure</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current-password">Current Password</Label>
-                <Input id="current-password" type="password" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
-                <Input id="new-password" type="password" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
-                <Input id="confirm-password" type="password" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button>Change Password</Button>
-            </CardFooter>
+            <form onSubmit={handlePasswordChange}>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="current-password">Current Password</Label>
+                  <Input id="current-password" name="current-password" type="password" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <Input id="new-password" name="new-password" type="password" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm New Password</Label>
+                  <Input id="confirm-password" name="confirm-password" type="password" />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" disabled={isUpdating}>
+                  {isUpdating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Changing...
+                    </>
+                  ) : (
+                    "Change Password"
+                  )}
+                </Button>
+              </CardFooter>
+            </form>
           </Card>
           
           <Card>

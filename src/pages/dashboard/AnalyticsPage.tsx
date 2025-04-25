@@ -1,73 +1,64 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { fetchBlogs } from "@/lib/api";
+import { fetchBlogViewStats, fetchMyBlogs } from "@/lib/api";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, BarChart, Bar } from "recharts";
 import { Eye, MessageSquare, BarChart2 } from "lucide-react";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Sample data for charts
-const weeklyViewsData = [
-  { day: "Mon", views: 45, comments: 5 },
-  { day: "Tue", views: 62, comments: 7 },
-  { day: "Wed", views: 58, comments: 8 },
-  { day: "Thu", views: 71, comments: 10 },
-  { day: "Fri", views: 83, comments: 12 },
-  { day: "Sat", views: 99, comments: 14 },
-  { day: "Sun", views: 87, comments: 11 },
-];
-
-const monthlyViewsData = [
-  { month: "Jan", views: 1245, comments: 145 },
-  { month: "Feb", views: 1358, comments: 165 },
-  { month: "Mar", views: 1859, comments: 190 },
-  { month: "Apr", views: 1725, comments: 213 },
-  { month: "May", views: 2458, comments: 257 },
-  { month: "Jun", views: 2798, comments: 290 },
-  { month: "Jul", views: 3264, comments: 312 },
-  { month: "Aug", views: 3147, comments: 301 },
-  { month: "Sep", views: 2879, comments: 276 },
-  { month: "Oct", views: 2534, comments: 241 },
-  { month: "Nov", views: 2390, comments: 198 },
-  { month: "Dec", views: 2871, comments: 267 },
-];
-
-const topPostsData = [
-  { title: "Getting Started with React", views: 2145, comments: 87 },
-  { title: "CSS Grid Layout Tutorial", views: 1876, comments: 62 },
-  { title: "JavaScript Promises Explained", views: 1543, comments: 58 },
-  { title: "Introduction to TypeScript", views: 1321, comments: 45 },
-  { title: "The Future of Web Development", views: 1298, comments: 51 },
-];
-
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState("weekly");
+  const [days, setDays] = useState(7);
   
-  const { data: blogs = [] } = useQuery({
+  const { data: blogs = [], isLoading: isLoadingBlogs } = useQuery({
     queryKey: ['analytics-blogs'],
-    queryFn: () => fetchBlogs({ limit: 50 })
+    queryFn: () => fetchMyBlogs()
+  });
+  
+  const { data: viewStats = [], isLoading: isLoadingStats } = useQuery({
+    queryKey: ['blog-view-stats', days],
+    queryFn: () => fetchBlogViewStats(days)
   });
 
   // Calculate total stats
   const totalViews = blogs.reduce((sum, blog) => sum + (blog.view_count || 0), 0);
   const totalComments = blogs.reduce((sum, blog) => sum + ((blog.comments && blog.comments[0]?.count) || 0), 0);
   
-  // Get chart data based on selected time range
-  const chartData = timeRange === "weekly" ? weeklyViewsData : monthlyViewsData;
+  // Create top posts data from real blogs
+  const topPosts = [...blogs]
+    .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
+    .slice(0, 5)
+    .map(blog => ({
+      title: blog.title,
+      views: blog.view_count || 0,
+      comments: blog.comments?.[0]?.count || 0
+    }));
+
+  const handleTimeRangeChange = (value: string) => {
+    setTimeRange(value);
+    if (value === "weekly") {
+      setDays(7);
+    } else if (value === "monthly") {
+      setDays(30);
+    } else if (value === "yearly") {
+      setDays(365);
+    }
+  };
   
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="font-heading text-3xl font-bold">Analytics</h1>
-        <Select value={timeRange} onValueChange={setTimeRange}>
+        <Select value={timeRange} onValueChange={handleTimeRangeChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select time range" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="weekly">Last 7 days</SelectItem>
-            <SelectItem value="monthly">This year</SelectItem>
+            <SelectItem value="monthly">Last 30 days</SelectItem>
+            <SelectItem value="yearly">This year</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -82,10 +73,7 @@ export default function AnalyticsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{totalViews}</div>
             <p className="text-xs text-muted-foreground">
-              {timeRange === "weekly" 
-                ? `+${weeklyViewsData.reduce((sum, day) => sum + day.views, 0)} this week`
-                : `+${monthlyViewsData.slice(-3).reduce((sum, month) => sum + month.views, 0)} last quarter`
-              }
+              {isLoadingStats ? "Loading..." : `+${viewStats.reduce((sum, day) => sum + day.views, 0)} in selected period`}
             </p>
           </CardContent>
         </Card>
@@ -98,10 +86,7 @@ export default function AnalyticsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{totalComments}</div>
             <p className="text-xs text-muted-foreground">
-              {timeRange === "weekly" 
-                ? `+${weeklyViewsData.reduce((sum, day) => sum + day.comments, 0)} this week`
-                : `+${monthlyViewsData.slice(-3).reduce((sum, month) => sum + month.comments, 0)} last quarter`
-              }
+              From {blogs.length} blog posts
             </p>
           </CardContent>
         </Card>
@@ -129,31 +114,39 @@ export default function AnalyticsPage() {
       <Tabs defaultValue="views" className="w-full">
         <TabsList>
           <TabsTrigger value="views">Views Over Time</TabsTrigger>
-          <TabsTrigger value="comments">Comments Over Time</TabsTrigger>
+          <TabsTrigger value="comments">Comments</TabsTrigger>
         </TabsList>
         <TabsContent value="views">
           <Card>
             <CardHeader>
-              <CardTitle>Views {timeRange === "weekly" ? "This Week" : "This Year"}</CardTitle>
+              <CardTitle>Views {timeRange === "weekly" ? "Last 7 Days" : timeRange === "monthly" ? "Last 30 Days" : "This Year"}</CardTitle>
               <CardDescription>Track how your blog views are performing over time</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <XAxis 
-                      dataKey={timeRange === "weekly" ? "day" : "month"} 
-                    />
-                    <YAxis />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="views"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {isLoadingStats ? (
+                  <div className="flex h-full items-center justify-center">
+                    <p>Loading view statistics...</p>
+                  </div>
+                ) : viewStats.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={viewStats}>
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line
+                        type="monotone"
+                        dataKey="views"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <p>No view data available for the selected period.</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -161,26 +154,29 @@ export default function AnalyticsPage() {
         <TabsContent value="comments">
           <Card>
             <CardHeader>
-              <CardTitle>Comments {timeRange === "weekly" ? "This Week" : "This Year"}</CardTitle>
-              <CardDescription>Track how user engagement is performing over time</CardDescription>
+              <CardTitle>Comments by Blog</CardTitle>
+              <CardDescription>Number of comments on each of your blog posts</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <XAxis 
-                      dataKey={timeRange === "weekly" ? "day" : "month"} 
-                    />
-                    <YAxis />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="comments"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {isLoadingBlogs ? (
+                  <div className="flex h-full items-center justify-center">
+                    <p>Loading comment statistics...</p>
+                  </div>
+                ) : blogs.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topPosts}>
+                      <XAxis dataKey="title" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="comments" fill="hsl(var(--primary))" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <p>No comment data available.</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -191,18 +187,28 @@ export default function AnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Top Performing Posts</CardTitle>
-          <CardDescription>Your most viewed and commented blog posts</CardDescription>
+          <CardDescription>Your most viewed blog posts</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topPostsData} layout="vertical">
-                <XAxis type="number" />
-                <YAxis dataKey="title" type="category" width={150} />
-                <Tooltip />
-                <Bar dataKey="views" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
+            {isLoadingBlogs ? (
+              <div className="flex h-full items-center justify-center">
+                <p>Loading top posts...</p>
+              </div>
+            ) : topPosts.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topPosts} layout="vertical">
+                  <XAxis type="number" />
+                  <YAxis dataKey="title" type="category" width={150} />
+                  <Tooltip />
+                  <Bar dataKey="views" fill="hsl(var(--primary))" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p>No blog posts available.</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

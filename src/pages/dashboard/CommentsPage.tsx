@@ -1,5 +1,5 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Table, 
@@ -10,14 +10,12 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { formatDistanceToNow } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, Trash2, X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
 
 export default function CommentsPage() {
-  const [deletedComments, setDeletedComments] = useState<string[]>([]);
+  const queryClient = useQueryClient();
   
   const { data: comments = [], isLoading } = useQuery({
     queryKey: ['dashboard-comments'],
@@ -36,13 +34,28 @@ export default function CommentsPage() {
     }
   });
   
-  const handleDeleteComment = async (id: string) => {
-    // Local delete for UI responsiveness
-    setDeletedComments(prev => [...prev, id]);
-    toast.success("Comment deleted");
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      const { error } = await supabase
+        .from('comments')
+        .delete()
+        .eq('id', commentId);
+      
+      if (error) throw error;
+      return commentId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard-comments'] });
+      toast.success("Comment deleted successfully");
+    },
+    onError: () => {
+      toast.error("Failed to delete comment");
+    }
+  });
+
+  const handleDeleteComment = (id: string) => {
+    deleteCommentMutation.mutate(id);
   };
-  
-  const filteredComments = comments.filter(comment => !deletedComments.includes(comment.id));
 
   return (
     <div className="space-y-6">
@@ -66,8 +79,8 @@ export default function CommentsPage() {
                   Loading comments...
                 </TableCell>
               </TableRow>
-            ) : filteredComments.length > 0 ? (
-              filteredComments.map((comment) => (
+            ) : comments.length > 0 ? (
+              comments.map((comment) => (
                 <TableRow key={comment.id}>
                   <TableCell className="max-w-[300px] truncate">
                     {comment.content}
@@ -89,6 +102,7 @@ export default function CommentsPage() {
                         variant="ghost" 
                         size="sm" 
                         onClick={() => handleDeleteComment(comment.id)}
+                        disabled={deleteCommentMutation.isPending}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                         <span className="sr-only">Delete</span>
