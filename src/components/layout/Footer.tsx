@@ -4,32 +4,65 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [name, setName] = useState("");
   
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       toast.error("Please enter your email address");
       return;
     }
     
-    toast.success("Thank you for subscribing to our newsletter!");
-    setEmail("");
+    try {
+      // Store the email subscription in the database
+      const { error } = await supabase
+        .from('newsletter_subscriptions')
+        .insert({ email });
+        
+      if (error) throw error;
+      
+      toast.success("Thank you for subscribing to our newsletter!");
+      setEmail("");
+    } catch (err) {
+      console.error("Error subscribing to newsletter:", err);
+      toast.error("Failed to subscribe. Please try again later.");
+    }
   };
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message) {
       toast.error("Please enter your message");
       return;
     }
     
-    toast.success("Your message has been sent! We'll get back to you soon.");
-    setMessage("");
+    try {
+      // Store the contact message in the database
+      const { error } = await supabase
+        .from('contact_messages')
+        .insert({
+          name,
+          email,
+          message
+        });
+        
+      if (error) throw error;
+      
+      toast.success("Your message has been sent! We'll get back to you soon.");
+      setMessage("");
+      setName("");
+      setEmail("");
+    } catch (err) {
+      console.error("Error sending contact message:", err);
+      toast.error("Failed to send message. Please try again later.");
+    }
   };
   
   return (
@@ -106,7 +139,20 @@ export function Footer() {
           </p>
           <form onSubmit={handleContactSubmit} className="mt-2 space-y-2">
             <Input
-              as="textarea"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              className="resize-none"
+            />
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Your email"
+              className="resize-none"
+            />
+            <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Your message"
