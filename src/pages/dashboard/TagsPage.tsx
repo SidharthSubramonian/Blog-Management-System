@@ -21,21 +21,43 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { formatDistanceToNow } from "date-fns";
-import { Plus, Search, Trash2, Edit } from "lucide-react";
+import { Plus, Search, Trash2, Edit, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function TagsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isNewTagDialogOpen, setIsNewTagDialogOpen] = useState(false);
   const [newTagName, setNewTagName] = useState("");
   const [localDeletedTags, setLocalDeletedTags] = useState<string[]>([]);
+  const [expandedTags, setExpandedTags] = useState<string[]>([]);
+  const { user } = useAuth();
   
   const { data: tags = [], refetch } = useQuery({
     queryKey: ['tags'],
     queryFn: fetchTags
+  });
+
+  // Fetch blogs for expanded tags
+  const { data: blogs = [], refetch: refetchBlogs } = useQuery({
+    queryKey: ['blogs-by-tag', expandedTags],
+    queryFn: async () => {
+      if (!expandedTags.length) return [];
+      
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('id, title, tags')
+        .filter('tags', 'cs', `{${expandedTags.join(',')}}`)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: expandedTags.length > 0
   });
 
   const handleCreateTag = async () => {
@@ -68,6 +90,14 @@ export default function TagsPage() {
     // This is just local UI state - in a real app would delete from DB
     setLocalDeletedTags(prev => [...prev, id]);
     toast.success("Tag deleted!");
+  };
+
+  const toggleTagExpansion = (tagName: string) => {
+    setExpandedTags(prev => 
+      prev.includes(tagName) 
+        ? prev.filter(t => t !== tagName)
+        : [...prev, tagName]
+    );
   };
   
   const filteredTags = tags
@@ -129,6 +159,7 @@ export default function TagsPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10"></TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Slug</TableHead>
               <TableHead>Created</TableHead>
@@ -138,39 +169,83 @@ export default function TagsPage() {
           <TableBody>
             {filteredTags.length > 0 ? (
               filteredTags.map((tag) => (
-                <TableRow key={tag.id}>
-                  <TableCell>
-                    <Badge variant="outline" className="text-xs font-normal">
-                      {tag.name}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {tag.slug}
-                  </TableCell>
-                  <TableCell>
-                    {formatDistanceToNow(new Date(tag.created_at), { addSuffix: true })}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
+                <>
+                  <TableRow key={tag.id}>
+                    <TableCell>
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleDeleteTag(tag.id)}
+                        className="p-0 h-6 w-6"
+                        onClick={() => toggleTagExpansion(tag.name)}
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                        <span className="sr-only">Delete</span>
+                        {expandedTags.includes(tag.name) ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
                       </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs font-normal">
+                        {tag.name}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {tag.slug}
+                    </TableCell>
+                    <TableCell>
+                      {formatDistanceToNow(new Date(tag.created_at), { addSuffix: true })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleDeleteTag(tag.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  
+                  {expandedTags.includes(tag.name) && (
+                    <TableRow key={`${tag.id}-blogs`} className="bg-muted/30">
+                      <TableCell colSpan={5} className="px-8 py-3">
+                        <div className="text-sm font-medium mb-2">Posts with tag "{tag.name}":</div>
+                        <div className="space-y-2 pl-2">
+                          {blogs.filter(blog => blog.tags?.includes(tag.name)).length > 0 ? (
+                            blogs
+                              .filter(blog => blog.tags?.includes(tag.name))
+                              .map(blog => (
+                                <div key={blog.id} className="flex items-center gap-2">
+                                  <Link 
+                                    to={`/blogs/${blog.id}`} 
+                                    className="text-sm text-primary hover:underline"
+                                  >
+                                    {blog.title}
+                                  </Link>
+                                </div>
+                              ))
+                          ) : (
+                            <div className="text-sm text-muted-foreground italic">
+                              No posts found with this tag
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   No tags found.
                 </TableCell>
               </TableRow>

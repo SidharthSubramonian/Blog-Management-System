@@ -32,6 +32,7 @@ import SettingsPage from "./pages/dashboard/SettingsPage";
 
 // Blog management pages
 import NewBlogPage from "./pages/blog/NewBlogPage";
+import EditBlogPage from "./pages/blog/EditBlogPage";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => {
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/blogs" element={<MyBlogsPage />} />
+                <Route path="/dashboard/blogs/edit/:id" element={<EditBlogPage />} />
                 <Route path="/dashboard/comments" element={<CommentsPage />} />
                 <Route path="/dashboard/tags" element={<TagsPage />} />
                 <Route path="/dashboard/analytics" element={<AnalyticsPage />} />

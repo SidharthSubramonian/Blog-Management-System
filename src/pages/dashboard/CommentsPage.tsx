@@ -13,25 +13,32 @@ import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CommentsPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   const { data: comments = [], isLoading } = useQuery({
     queryKey: ['dashboard-comments'],
     queryFn: async () => {
+      if (!user) throw new Error("User must be logged in");
+
+      // Fetch only comments on the user's own blogs
       const { data, error } = await supabase
         .from('comments')
         .select(`
           *,
-          blog:blogs(id, title),
+          blog:blogs!inner(id, title, author_id),
           author:profiles(id, username, avatar_url)
         `)
+        .eq('blogs.author_id', user.id)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: !!user
   });
   
   const deleteCommentMutation = useMutation({
@@ -59,7 +66,7 @@ export default function CommentsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-heading text-3xl font-bold">Comments</h1>
+      <h1 className="font-heading text-3xl font-bold">Comments on My Blogs</h1>
       
       <div className="rounded-md border">
         <Table>
@@ -114,7 +121,7 @@ export default function CommentsPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
-                  No comments found.
+                  No comments found on your blogs.
                 </TableCell>
               </TableRow>
             )}
