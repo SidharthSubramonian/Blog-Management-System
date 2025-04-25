@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
@@ -48,7 +47,7 @@ export function Navbar({ user }: NavbarProps) {
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
             <span className="font-heading text-xl font-bold text-blog-primary">
-              ScribeSphere
+              Blog.com
             </span>
           </Link>
           
@@ -119,7 +118,6 @@ export function Navbar({ user }: NavbarProps) {
         </button>
       </div>
 
-      {/* Mobile Menu */}
       <div
         className={cn(
           "fixed inset-0 top-16 z-50 bg-background p-6 flex flex-col md:hidden",

@@ -62,7 +62,7 @@ export function Footer() {
     <footer className="border-t bg-background/50 py-8">
       <div className="container grid gap-8 md:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col gap-2">
-          <h3 className="font-heading text-lg font-semibold">ScribeSphere</h3>
+          <h3 className="font-heading text-lg font-semibold">Blog.com</h3>
           <p className="text-sm text-muted-foreground">
             A platform for sharing your ideas, stories, and knowledge with the world.
           </p>
@@ -158,7 +158,7 @@ export function Footer() {
       
       <div className="container mt-8 border-t pt-4">
         <p className="text-center text-sm text-muted-foreground">
-          © {currentYear} ScribeSphere. All rights reserved.
+          © {currentYear} Blog.com. All rights reserved.
         </p>
       </div>
     </footer>

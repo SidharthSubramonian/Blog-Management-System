@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BlogCard } from "@/components/blog/BlogCard";
@@ -24,7 +23,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="container max-w-6xl space-y-6 py-12 text-center">
         <h1 className="font-heading text-4xl font-bold leading-tight tracking-tighter sm:text-5xl md:text-6xl">
-          Welcome to <span className="text-blog-primary">ScribeSphere</span>
+          Welcome to <span className="text-blog-primary">Blog.com</span>
         </h1>
         <p className="mx-auto max-w-3xl text-xl text-muted-foreground">
           Your go-to platform for discovering, creating, and sharing inspiring content.

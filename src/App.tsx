@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster as ToastToaster } from "@/components/ui/toaster";
@@ -49,6 +48,8 @@ const App = () => {
                 <Route path="/blogs/:id" element={<BlogDetailPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
               </Route>
               
               {/* Dashboard routes with dashboard layout */}
