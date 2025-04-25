@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,10 +20,9 @@ export function Footer() {
     }
     
     try {
-      // Store the email subscription in the database
       const { error } = await supabase
-        .from('newsletter_subscriptions')
-        .insert({ email });
+        .from("newsletter_subscriptions")
+        .insert([{ email }]);
         
       if (error) throw error;
       
@@ -44,14 +42,9 @@ export function Footer() {
     }
     
     try {
-      // Store the contact message in the database
       const { error } = await supabase
-        .from('contact_messages')
-        .insert({
-          name,
-          email,
-          message
-        });
+        .from("contact_messages")
+        .insert([{ name, email, message }]);
         
       if (error) throw error;
       
@@ -113,6 +106,12 @@ export function Footer() {
             <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground">
               Terms of Service
             </Link>
+            <Link 
+              to="/documentation"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Documentation
+            </Link>
             <a 
               href="https://github.com/scribesphere"
               target="_blank" 
@@ -120,14 +119,6 @@ export function Footer() {
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               GitHub Repository
-            </a>
-            <a 
-              href="https://docs.scribesphere.com"
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Documentation
             </a>
           </nav>
         </div>
