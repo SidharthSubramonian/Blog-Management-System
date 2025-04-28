@@ -94,11 +94,11 @@ export default function CommentsPage() {
                   </TableCell>
                   <TableCell>
                     <a href={`/blogs/${comment.blog?.id}`} className="hover:underline">
-                      {comment.blog?.title || "Unknown Blog"}
+                      {comment.blog?.title || "Deleted Blog"}
                     </a>
                   </TableCell>
                   <TableCell>
-                    {comment.author?.username || "Unknown User"}
+                    {comment.author?.username || "Deleted User"}
                   </TableCell>
                   <TableCell>
                     {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}

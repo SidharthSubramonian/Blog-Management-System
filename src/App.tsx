@@ -54,6 +54,7 @@ const App = () => {
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
+                <Route path="/documentation" element={<DocumentationPage />} />
               </Route>
               
               {/* Dashboard routes with dashboard layout */}

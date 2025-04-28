@@ -25,8 +25,8 @@ interface BlogCardProps {
 export function BlogCard({ blog }: BlogCardProps) {
   const commentCount = blog.comments?.[0]?.count || 0;
   
-  // Use the author's username or a default value
-  const authorName = blog.author?.username || "Anonymous";
+  // Use the author's username or show "Deleted User"
+  const authorName = blog.author?.username || "Deleted User";
   const authorInitials = authorName.substring(0, 2).toUpperCase();
   
   return (
