@@ -17,6 +17,7 @@ import BlogDetailPage from "./pages/BlogDetailPage";
 import NotFound from "./pages/NotFound";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
+import DocumentationPage from "./pages/DocumentationPage";
 
 // Auth pages
 import LoginPage from "./pages/auth/LoginPage";
