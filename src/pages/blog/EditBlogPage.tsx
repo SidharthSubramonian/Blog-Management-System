@@ -154,8 +154,9 @@ export default function EditBlogPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Tags</label>
             <TagSelector
-              selected={selectedTags}
-              setSelected={setSelectedTags}
+              selectedTags={selectedTags}
+              setSelectedTags={setSelectedTags}
+              popularTags={tags.map(tag => tag.name)}
             />
           </div>
           

@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { formatDistanceToNow, format } from "date-fns";
@@ -104,13 +103,10 @@ export default function BlogDetailPage() {
     );
   }
 
-  // Ensure blog.author is not null before accessing its properties
-  const author = blog.author || { username: "Anonymous" };
-  const authorName = author.username || "Anonymous";
+  const authorName = blog.author?.username || "Anonymous";
   const authorInitials = authorName.substring(0, 2).toUpperCase();
-  const avatarUrl = author.avatar_url || null;
+  const avatarUrl = blog.author?.avatar_url || null;
 
-  // Transform the database comments to match the CommentSection component's expected format
   const formattedComments = blog.comments.map(comment => ({
     id: comment.id,
     content: comment.content,
