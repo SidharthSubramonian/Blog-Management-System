@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export async function fetchBlogs({ featured = false, limit = 10 } = {}) {
@@ -20,12 +19,7 @@ export async function fetchBlogs({ featured = false, limit = 10 } = {}) {
   
   if (error) throw error;
   
-  const processedData = data?.map(blog => ({
-    ...blog,
-    author: blog.author?.[0] || null
-  }));
-  
-  return processedData || [];
+  return data || [];
 }
 
 export async function fetchBlogById(id: string) {
@@ -46,33 +40,7 @@ export async function fetchBlogById(id: string) {
 
   if (error) throw error;
   
-  const processedData = {
-    ...data,
-    author: data.author?.[0] || null,
-    comments: data.comments?.map(comment => ({
-      ...comment,
-      author: comment.author?.[0] || null
-    })) || []
-  };
-  
-  try {
-    const { data: blogData } = await supabase
-      .from('blogs')
-      .select('view_count')
-      .eq('id', id)
-      .single();
-    
-    const viewCount = (blogData?.view_count || 0) + 1;
-    
-    await supabase
-      .from('blogs')
-      .update({ view_count: viewCount })
-      .eq('id', id);
-  } catch (e) {
-    console.error("Failed to increment view count:", e);
-  }
-  
-  return processedData;
+  return data;
 }
 
 export async function fetchMyBlogs() {
@@ -92,12 +60,7 @@ export async function fetchMyBlogs() {
     
   if (error) throw error;
   
-  const processedData = data?.map(blog => ({
-    ...blog,
-    author: blog.author?.[0] || null
-  }));
-  
-  return processedData || [];
+  return data || [];
 }
 
 export async function fetchTags() {

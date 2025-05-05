@@ -103,17 +103,19 @@ export default function BlogDetailPage() {
     );
   }
 
+  // Handle author data with proper fallbacks
   const authorName = blog.author?.username || "Anonymous";
   const authorInitials = authorName.substring(0, 2).toUpperCase();
   const avatarUrl = blog.author?.avatar_url || null;
 
+  // Format comments for the CommentSection component
   const formattedComments = blog.comments.map(comment => ({
     id: comment.id,
     content: comment.content,
     createdAt: new Date(comment.created_at),
     author: {
       id: comment.author?.id || "anonymous",
-      name: comment.author?.username || "Anonymous",
+      name: comment.author?.username || "Anonymous", 
       image: comment.author?.avatar_url || null
     }
   }));

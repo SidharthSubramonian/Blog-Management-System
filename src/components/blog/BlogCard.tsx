@@ -12,10 +12,12 @@ interface BlogCardProps {
     excerpt: string;
     cover_image?: string;
     created_at: string;
+    author_id: string;
     author?: {
+      id?: string;
       username?: string;
       avatar_url?: string;
-    } | null;
+    };
     tags: string[];
     comments: { count: number }[];
     view_count: number;
@@ -25,7 +27,7 @@ interface BlogCardProps {
 export function BlogCard({ blog }: BlogCardProps) {
   const commentCount = blog.comments?.[0]?.count || 0;
   
-  // Get author information or use a fallback
+  // Get author information with proper fallback
   const authorName = blog.author?.username || "Anonymous";
   const authorInitials = authorName.substring(0, 2).toUpperCase();
   
