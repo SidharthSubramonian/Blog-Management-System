@@ -28,7 +28,7 @@ export function BlogCard({ blog }: BlogCardProps) {
   const commentCount = blog.comments?.[0]?.count || 0;
   
   // Get author information with proper fallback
-  const authorName = blog.author?.username || "Anonymous";
+  const authorName = blog.author?.username || "Unknown Author";
   const authorInitials = authorName.substring(0, 2).toUpperCase();
   
   return (

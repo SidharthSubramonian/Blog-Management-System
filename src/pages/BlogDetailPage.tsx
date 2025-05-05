@@ -104,7 +104,7 @@ export default function BlogDetailPage() {
   }
 
   // Handle author data with proper fallbacks
-  const authorName = blog.author?.username || "Anonymous";
+  const authorName = blog.author?.username || "Unknown Author";
   const authorInitials = authorName.substring(0, 2).toUpperCase();
   const avatarUrl = blog.author?.avatar_url || null;
 
