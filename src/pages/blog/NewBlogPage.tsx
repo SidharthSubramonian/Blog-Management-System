@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TagSelector } from "@/components/blog/TagSelector";
+import { ImageUploader } from "@/components/blog/ImageUploader";
 import { toast } from "sonner";
-import { ArrowLeft, Image, Loader2, Save } from "lucide-react";
+import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { createBlog } from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
 
@@ -157,31 +158,11 @@ export default function NewBlogPage() {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="cover-image">Cover Image URL</Label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Input
-                id="cover-image"
-                placeholder="https://example.com/image.jpg"
-                value={coverImage}
-                onChange={(e) => setCoverImage(e.target.value)}
-              />
-              <Image className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          </div>
-          {coverImage && (
-            <div className="mt-2 rounded-md overflow-hidden h-[200px]">
-              <img
-                src={coverImage}
-                alt="Cover preview"
-                className="h-full w-full object-cover"
-                onError={() => {
-                  toast.error("Invalid image URL");
-                  setCoverImage("");
-                }}
-              />
-            </div>
-          )}
+          <Label htmlFor="cover-image">Cover Image</Label>
+          <ImageUploader 
+            imageUrl={coverImage}
+            setImageUrl={setCoverImage}
+          />
         </div>
         
         <div className="space-y-2">
@@ -201,6 +182,7 @@ export default function NewBlogPage() {
           <TagSelector
             selectedTags={selectedTags}
             setSelectedTags={setSelectedTags}
+            popularTags={[]}
           />
         </div>
       </form>

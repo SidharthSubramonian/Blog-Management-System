@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { TagSelector } from "@/components/blog/TagSelector";
+import { ImageUploader } from "@/components/blog/ImageUploader";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -142,12 +143,10 @@ export default function EditBlogPage() {
           </div>
           
           <div className="space-y-2">
-            <label htmlFor="coverImage" className="text-sm font-medium">Cover Image URL</label>
-            <Input
-              id="coverImage"
-              value={coverImage}
-              onChange={(e) => setCoverImage(e.target.value)}
-              placeholder="https://example.com/image.jpg"
+            <label htmlFor="coverImage" className="text-sm font-medium">Cover Image</label>
+            <ImageUploader
+              imageUrl={coverImage}
+              setImageUrl={setCoverImage}
             />
           </div>
           
