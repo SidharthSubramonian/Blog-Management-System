@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +11,7 @@ import { Check, Loader2, Save, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadAvatar } from "@/lib/uploadUtils";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -61,38 +61,6 @@ export default function SettingsPage() {
     setAvatarFile(event.target.files[0]);
   };
 
-  const uploadAvatar = async (): Promise<string | null> => {
-    if (!avatarFile || !user) return null;
-    
-    try {
-      // Generate a unique file name with extension
-      const fileExt = avatarFile.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}${fileExt ? `.${fileExt}` : ''}`;
-      const filePath = `avatars/${fileName}`;
-      
-      // Upload to the avatars bucket
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, avatarFile, {
-          cacheControl: '3600',
-          upsert: true
-        });
-      
-      if (uploadError) throw uploadError;
-      
-      // Get the public URL
-      const { data } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-        
-      return data.publicUrl;
-    } catch (error) {
-      console.error("Error uploading avatar:", error);
-      toast.error("Failed to upload avatar image");
-      return null;
-    }
-  };
-
   const handleProfileUpdate = async () => {
     if (!user) return;
     
@@ -102,9 +70,15 @@ export default function SettingsPage() {
       // Upload avatar if selected
       let newAvatarUrl = avatarUrl;
       if (avatarFile) {
-        const uploadedUrl = await uploadAvatar();
-        if (uploadedUrl) {
-          newAvatarUrl = uploadedUrl;
+        try {
+          // Use the uploadAvatar utility function
+          newAvatarUrl = await uploadAvatar(avatarFile, user.id);
+          console.log("Avatar uploaded successfully:", newAvatarUrl);
+        } catch (error) {
+          console.error("Avatar upload failed:", error);
+          toast.error("Failed to upload avatar image");
+          setIsUpdating(false);
+          return;
         }
       }
       
@@ -120,7 +94,7 @@ export default function SettingsPage() {
       
       if (error) throw error;
       
-      // Update the avatar URL state only after successful database update
+      // Update the avatar URL state
       setAvatarUrl(newAvatarUrl);
       setAvatarFile(null);
       
