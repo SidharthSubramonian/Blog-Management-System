@@ -64,23 +64,31 @@ export default function SettingsPage() {
   const uploadAvatar = async (): Promise<string | null> => {
     if (!avatarFile || !user) return null;
     
-    const fileExt = avatarFile.name.split('.').pop();
-    const fileName = `${user.id}-${Math.random().toString(36).substring(2)}${fileExt ? `.${fileExt}` : ''}`;
-    
     try {
+      // Generate a unique file name with extension
+      const fileExt = avatarFile.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}${fileExt ? `.${fileExt}` : ''}`;
+      const filePath = `avatars/${fileName}`;
+      
+      // Upload to the avatars bucket
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, avatarFile);
+        .upload(filePath, avatarFile, {
+          cacheControl: '3600',
+          upsert: true
+        });
       
       if (uploadError) throw uploadError;
       
+      // Get the public URL
       const { data } = supabase.storage
         .from('avatars')
-        .getPublicUrl(fileName);
+        .getPublicUrl(filePath);
         
       return data.publicUrl;
     } catch (error) {
       console.error("Error uploading avatar:", error);
+      toast.error("Failed to upload avatar image");
       return null;
     }
   };
@@ -112,8 +120,14 @@ export default function SettingsPage() {
       
       if (error) throw error;
       
+      // Update the avatar URL state only after successful database update
       setAvatarUrl(newAvatarUrl);
       setAvatarFile(null);
+      
+      // Update auth metadata to reflect the new avatar
+      await supabase.auth.updateUser({
+        data: { avatar_url: newAvatarUrl }
+      });
       
       toast.success("Profile updated successfully!");
     } catch (error) {

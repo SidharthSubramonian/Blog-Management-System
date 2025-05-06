@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { BlogCard } from "@/components/blog/BlogCard";
 import { useQuery } from "@tanstack/react-query";
 import { fetchBlogs } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
+  const { user } = useAuth();
   const { data: recentBlogs = [], isLoading: isLoadingRecent } = useQuery({
     queryKey: ['blogs', 'recent'],
     queryFn: () => fetchBlogs({ limit: 3 })
@@ -33,9 +35,11 @@ export default function HomePage() {
           <Button asChild size="lg">
             <Link to="/blogs">Explore Blogs</Link>
           </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link to="/login">Get Started</Link>
-          </Button>
+          {!user && (
+            <Button asChild variant="outline" size="lg">
+              <Link to="/login">Get Started</Link>
+            </Button>
+          )}
         </div>
       </section>
 
@@ -98,20 +102,22 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="bg-blog-primary py-16 text-white">
-        <div className="container max-w-6xl space-y-6 text-center">
-          <h2 className="font-heading text-3xl font-bold leading-tight md:text-4xl">
-            Ready to start your blogging journey?
-          </h2>
-          <p className="mx-auto max-w-3xl text-xl text-white/80">
-            Join thousands of content creators who share their knowledge and stories every day.
-          </p>
-          <Button asChild variant="secondary" size="lg">
-            <Link to="/signup">Create Account</Link>
-          </Button>
-        </div>
-      </section>
+      {/* CTA Section - Only show if user is not logged in */}
+      {!user && (
+        <section className="bg-blog-primary py-16 text-white">
+          <div className="container max-w-6xl space-y-6 text-center">
+            <h2 className="font-heading text-3xl font-bold leading-tight md:text-4xl">
+              Ready to start your blogging journey?
+            </h2>
+            <p className="mx-auto max-w-3xl text-xl text-white/80">
+              Join thousands of content creators who share their knowledge and stories every day.
+            </p>
+            <Button asChild variant="secondary" size="lg">
+              <Link to="/signup">Create Account</Link>
+            </Button>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
